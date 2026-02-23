@@ -3,14 +3,28 @@ name = "pytest-pvcr"
 version = "0.1.0"
 description = "PyTest Process VCR"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    { name = "Fabien Dupont", email = "fabien.dupont@eurofiber.com" }
+    { name = "Fabien Dupont", email = "fab+github@eurofiber.com" }
 ]
 requires-python = ">=3.12"
 dependencies = [
     "pytest>=3.5.0",
     "pyyaml>=6.0.3",
 ]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Testing",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Repository = "https://github.com/kafeinnet/pytest-pvcr"
+Issues = "https://github.com/kafeinnet/pytest-pvcr/issues"
 
 [build-system]
 requires = ["uv_build>=0.10.2,<0.11.0"]
