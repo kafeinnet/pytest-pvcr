@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.2]
 
 ### Fixed
 
@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - Fix `__eq__` raising `AttributeError` when comparing `Recording` with non-`Recording` objects (`recordings.py`)
 - Add missing teardown in `pvcr` fixture to reset wrapper state after each test (`plugin.py`)
 - Fix `pvcr_block_run` fixture return type annotation (`str` → `bool`) and use explicit `bool()` cast (`plugin.py`)
+- Fix Recordings history being cleaned each time a Recording is loaded from file (`recordings.py`)
 
 ### Added
 
