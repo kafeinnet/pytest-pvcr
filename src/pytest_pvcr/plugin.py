@@ -119,9 +119,6 @@ def pvcr(
             / f"{request.function.__name__}.yaml"
         )
 
-        print("pvcr function")
-        print(pvcr_fuzzy_matchers)
-
         fuzzy_matchers = pvcr_global_fuzzy_matchers
         for marker in pvcr_fuzzy_matchers:
             if not marker.args:
@@ -137,6 +134,4 @@ def pvcr(
         SubprocessWrapper.pvcr_history = Recordings(
             recordings_file, pvcr_record_mode, fuzzy_matchers
         )
-        # print("init")
-        # print(fuzzy_matchers)
         yield SubprocessWrapper.pvcr_history
