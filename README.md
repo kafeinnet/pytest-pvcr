@@ -20,10 +20,12 @@ Mark your tests with `@pytest.mark.pvcr()` and run them:
 import subprocess
 import pytest
 
+
 @pytest.mark.pvcr()
 def test_ls():
     ret = subprocess.run(["ls", "/tmp"])
     assert ret.returncode == 0
+
 
 @pytest.mark.pvcr(wait=False)
 def test_slow_command():
@@ -85,7 +87,7 @@ pytest --pvcr-auto-fuzzy-match
 
 ```python
 @pytest.mark.pvcr()
-@pytest.mark.pvcr_fuzzy_matcher(r'^.+\/(config\.yml)$')
+@pytest.mark.pvcr_fuzzy_matcher(r"^.+\/(config\.yml)$")
 def test_with_fuzzy():
     subprocess.run(["cat", "/some/path/config.yml"])
 ```
