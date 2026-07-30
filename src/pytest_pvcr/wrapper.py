@@ -157,7 +157,7 @@ class Popen:
 
         self._pvcr_write()
 
-        return stdout, stderr
+        return stdout if stdout else b"", stderr if stderr else b""
 
     def wait(self, timeout=None) -> int:
         if self._pvcr_recording.saved:
