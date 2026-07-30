@@ -55,12 +55,12 @@ def run(
     stdout, stderr = process.communicate(input=input, timeout=timeout)
 
     if check and process.returncode > 0:
-        exc = SubprocessWrapper.pvcr_orig_cls.CalledProcessError()
-        exc.returncode = process.returncode
-        exc.cmd = args
-        exc.output = stdout
-        exc.stdout = stdout
-        exc.stderr = stderr
+        exc = SubprocessWrapper.pvcr_orig_cls.CalledProcessError(
+            returncode=process.returncode,
+            cmd=args,
+            output=stdout,
+            stderr=stdout,
+        )
         raise exc
 
     return SubprocessWrapper.pvcr_orig_cls.CompletedProcess(
