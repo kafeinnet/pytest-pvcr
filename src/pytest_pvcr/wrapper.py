@@ -162,7 +162,7 @@ class Popen:
     def wait(self, timeout=None) -> int:
         if self._pvcr_recording.saved:
             if SubprocessWrapper.pvcr_do_wait:
-                time.sleep(max(self._pvcr_recording.remaining_duration() / 1000000000, timeout))
+                time.sleep(max(self._pvcr_recording.remaining_duration() / 1000000000, timeout if timeout else 0))
 
             return self._pvcr_recording.returncode
 
