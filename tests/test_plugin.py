@@ -1,7 +1,34 @@
 import textwrap
 
 
-def test_pvcr_records_and_replays(pytester):
+def test_pvcr_records_and_replays_popen(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            ret = subprocess.Popen(["echo", "hello\\nworld !"], stdout=subprocess.PIPE)
+            line1 = ret.stdout.readline()
+            line2 = ret.stdout.readline()
+            ret.communicate()
+
+            assert ret.returncode == 0
+            assert line1 == b"hello\\n"
+            assert line2 == b"world !\\n"
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
+def test_pvcr_records_and_replays_run(pytester):
     pytester.makepyfile(
         textwrap.dedent("""\
         import subprocess

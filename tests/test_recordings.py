@@ -7,7 +7,7 @@ try:
 except ImportError:
     from yaml import Dumper
 
-from pytest_pvcr.recordings import Recordings
+from pytest_pvcr.recordings import EventType, Recordings
 
 
 def _make_recordings(
@@ -53,11 +53,14 @@ class TestAppend:
             [
                 {
                     "args": ["ls"],
-                    "stdin": None,
-                    "stdout": "file1\n",
-                    "stderr": "",
-                    "rc": 0,
-                    "duration": 1000,
+                    "timeline": [
+                        {
+                            "data": "file1\n",
+                            "event_type": 1,
+                            "duration": 1000,
+                        },
+                    ],
+                    "returncode": 0,
                     "iteration": 1,
                 }
             ],
@@ -65,27 +68,25 @@ class TestAppend:
         recs = _make_recordings(tmp_path)
         rec = recs.append(["ls"])
         assert rec.saved is True
-        assert rec.stdout == "file1\n"
-        assert rec.rc == 0
+        assert rec.next_event().data == "file1\n"
+        assert rec.returncode == 0
 
 
 class TestWriteAndLoad:
     def test_write_and_reload(self, tmp_path):
         recs = _make_recordings(tmp_path)
-        rec = recs.append(["echo", "hello"])
-        rec.stdout = "hello\n"
-        rec.stderr = ""
-        rec.rc = 0
-        rec.duration = 500
+        rec = recs.append(["echo"])
+        rec.append_event(event_type=EventType.stdout, data=b"hello\n")
+        rec.returncode = 0
         recs.write(rec)
         assert rec.saved is True
 
         # Reload in a fresh Recordings instance
         recs2 = _make_recordings(tmp_path)
-        rec2 = recs2.append(["echo", "hello"])
+        rec2 = recs2.append(["echo"])
         assert rec2.saved is True
-        assert rec2.stdout == "hello\n"
-        assert rec2.rc == 0
+        assert rec2.next_event().data == b"hello\n"
+        assert rec2.returncode == 0
 
     def test_creates_directory(self, tmp_path):
         recs = Recordings(
@@ -103,8 +104,7 @@ class TestWriteModes:
     def test_mode_none(self, tmp_path):
         recs = _make_recordings(tmp_path, mode="none")
         rec = recs.append(["ls"])
-        rec.rc = 0
-        rec.duration = 100
+        rec.returncode = 0
         recs.write(rec)
         assert not (tmp_path / "test.yaml").exists()
 
@@ -115,35 +115,31 @@ class TestWriteModes:
             [
                 {
                     "args": ["ls"],
-                    "rc": 0,
-                    "duration": 100,
+                    "returncode": 0,
                     "iteration": 1,
                 },
                 {
                     "args": ["echo"],
-                    "rc": 0,
-                    "duration": 200,
+                    "returncode": 0,
                     "iteration": 1,
                 },
             ],
         )
         recs = _make_recordings(tmp_path, mode="all")
         rec = recs.append(["ls"])
-        rec.rc = 42
-        rec.duration = 999
+        rec.returncode = 42
         recs.write(rec)
 
         # Verify echo recording is still there
         recs2 = _make_recordings(tmp_path, mode="new")
         rec_echo = recs2.append(["echo"])
         assert rec_echo.saved is True
-        assert rec_echo.rc == 0
+        assert rec_echo.returncode == 0
 
     def test_mode_once_first_run(self, tmp_path):
         recs = _make_recordings(tmp_path, mode="once")
         rec = recs.append(["ls"])
-        rec.rc = 0
-        rec.duration = 100
+        rec.returncode = 0
         recs.write(rec)
         assert (tmp_path / "test.yaml").exists()
 
@@ -154,7 +150,7 @@ class TestWriteModes:
         recs = _make_recordings(tmp_path, mode="once")
         rec = recs.append(["new_cmd"])
         rec.rc = 0
-        rec.duration = 100
+        rec.returncode = 0
         recs.write(rec)
         # Should not have written new_cmd
         recs2 = _make_recordings(tmp_path, mode="new")
@@ -195,8 +191,7 @@ class TestClean:
         path = tmp_path / "test.yaml"
         recs = _make_recordings(tmp_path)
         rec = recs.append(["ls"])
-        rec.rc = 0
-        rec.duration = 100
+        rec.returncode = 0
         recs.write(rec)
         assert path.exists()
 
