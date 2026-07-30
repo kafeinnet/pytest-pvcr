@@ -36,7 +36,7 @@ def test_pvcr_records_and_replays_run(pytester):
 
         @pytest.mark.pvcr()
         def test_echo():
-            ret = subprocess.run(["echo", "hello"])
+            ret = subprocess.run(["echo", "hello"], capture_output=True)
             assert ret.returncode == 0
             assert b"hello" in ret.stdout
         """)
@@ -117,7 +117,7 @@ def test_pvcr_record_mode_once(pytester):
 
         @pytest.mark.pvcr()
         def test_echo():
-            ret = subprocess.run(["echo", "hello"])
+            ret = subprocess.run(["echo", "hello"], capture_output=True)
             assert ret.returncode == 0
             assert b"hello" in ret.stdout
         """)

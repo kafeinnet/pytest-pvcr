@@ -77,9 +77,9 @@ class TestTimelineRecordingBytesEncoding:
         }
         rec = TimelineRecording.from_encoded_dict(d)
 
-        event = rec.next_event()
+        event = rec.next_event(EventType.stdout)
         assert event.data == b"hello"
-        event = rec.next_event()
+        event = rec.next_event(EventType.stderr)
         assert event.data == b"err"
 
     def test_full_roundtrip_bytes(self):

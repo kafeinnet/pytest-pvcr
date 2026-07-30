@@ -33,8 +33,8 @@ def test_iopipe_write():
     p.write(b"hello\n")
     p.write(b"world\n")
 
-    assert rec.next_event().data == b"hello\n"
-    assert rec.next_event().data == b"world\n"
+    assert rec.next_event(EventType.stdin).data == b"hello\n"
+    assert rec.next_event(EventType.stdin).data == b"world\n"
 
 
 def test_iopipe_read():
@@ -44,8 +44,8 @@ def test_iopipe_read():
 
     p = IOPipe(rec, EventType.stdout)
 
-    assert p.read() == b"hello\n"
-    assert p.read() is None
+    assert p.read(EventType.stdout) == b"hello\n"
+    assert p.read(EventType.stdout) == b""
 
 
 def test_iopipe_readline():
@@ -56,7 +56,7 @@ def test_iopipe_readline():
     p = IOPipe(rec, EventType.stdout)
 
     assert p.readline() == b"hello\n"
-    assert p.readline() is None
+    assert p.readline() == b""
 
 
 def test_linked_stdin_pipe():

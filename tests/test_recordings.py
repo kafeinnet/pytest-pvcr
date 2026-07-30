@@ -68,7 +68,7 @@ class TestAppend:
         recs = _make_recordings(tmp_path)
         rec = recs.append(["ls"])
         assert rec.saved is True
-        assert rec.next_event().data == "file1\n"
+        assert rec.next_event(EventType.stdout).data == "file1\n"
         assert rec.returncode == 0
 
 
@@ -85,7 +85,7 @@ class TestWriteAndLoad:
         recs2 = _make_recordings(tmp_path)
         rec2 = recs2.append(["echo"])
         assert rec2.saved is True
-        assert rec2.next_event().data == b"hello\n"
+        assert rec2.next_event(EventType.stdout).data == b"hello\n"
         assert rec2.returncode == 0
 
     def test_creates_directory(self, tmp_path):
