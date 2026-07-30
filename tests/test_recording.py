@@ -1,132 +1,105 @@
-from pytest_pvcr.recordings import Recording
+from pytest_pvcr.recordings import EventType, TimelineRecording
 
 
-class TestRecordingInit:
+class TestTimelineRecording:
     def test_defaults(self):
-        rec = Recording(["ls", "/tmp"])
+        rec = TimelineRecording(["ls", "/tmp"])
         assert rec.args == ["ls", "/tmp"]
-        assert rec.stdin is None
-        assert rec.stdout is None
-        assert rec.stderr is None
-        assert rec.rc is None
-        assert rec.duration is None
+        assert rec.returncode is None
         assert rec.iteration == 1
         assert rec.saved is False
 
     def test_all_fields(self):
-        rec = Recording(
+        rec = TimelineRecording(
             ["echo", "hi"],
-            stdin="input",
-            stdout="hi\n",
-            stderr="",
-            rc=0,
-            duration=1000,
+            returncode=0,
             iteration=2,
-            saved=True,
         )
-        assert rec.stdout == "hi\n"
+        assert rec.returncode == 0
         assert rec.iteration == 2
-        assert rec.saved is True
+
+    def test_duration(self):
+        rec = TimelineRecording(
+            ["echo"],
+            returncode=0,
+        )
+        rec.append_event(event_type=EventType.stdin, data="in", duration=1000)
+        rec.append_event(event_type=EventType.stdout, data="out", duration=2000)
+
+        assert rec.remaining_duration() == 3000
 
 
 class TestToEncodedDict:
     def test_minimal(self):
-        rec = Recording(["ls"], rc=0, duration=500)
+        rec = TimelineRecording(["ls"])
         d = rec.to_encoded_dict()
         assert d["args"] == ["ls"]
-        assert d["rc"] == 0
-        assert d["duration"] == 500
-        assert d["iteration"] == 1
-        assert "stdin" not in d
-        assert "stdout" not in d
-        assert "stderr" not in d
+        assert len(d["timeline"]) == 0
 
     def test_full(self):
-        rec = Recording(
+        rec = TimelineRecording(
             ["echo"],
-            stdin="in",
-            stdout="out",
-            stderr="err",
-            rc=0,
-            duration=100,
+            returncode=0,
+            iteration=3,
         )
+        rec.append_event(event_type=EventType.stdin, data="in", duration=1000)
+        rec.append_event(event_type=EventType.stdout, data="out", duration=2000)
         d = rec.to_encoded_dict()
-        assert d["stdin"] == "in"
-        assert d["stdout"] == "out"
-        assert d["stderr"] == "err"
+        assert d["timeline"][0]["data"] == "in"
+        assert d["timeline"][0]["duration"] == 1000
+        assert d["timeline"][1]["data"] == "out"
+        assert d["timeline"][1]["duration"] == 2000
+        assert d["returncode"] == 0
+        assert d["iteration"] == 3
 
 
 class TestFromEncodedDict:
     def test_roundtrip(self):
-        original = Recording(
+        original = TimelineRecording(
             ["echo", "hello"],
-            stdin="in",
-            stdout="out",
-            stderr="err",
-            rc=0,
-            duration=42,
+            returncode=0,
             iteration=3,
         )
         d = original.to_encoded_dict()
-        restored = Recording.from_encoded_dict(d)
+        restored = TimelineRecording.from_encoded_dict(d)
         assert restored.args == original.args
-        assert restored.stdin == original.stdin
-        assert restored.stdout == original.stdout
-        assert restored.stderr == original.stderr
-        assert restored.rc == original.rc
-        assert restored.duration == original.duration
+        assert restored.returncode == original.returncode
         assert restored.iteration == original.iteration
 
     def test_missing_fields(self):
-        rec = Recording.from_encoded_dict({})
+        rec = TimelineRecording.from_encoded_dict({})
         assert rec.args == []
-        assert rec.rc is None
+        assert rec.returncode is None
         assert rec.iteration == 1
-        assert rec.stdin is None
-        assert rec.stdout is None
-        assert rec.stderr is None
-        assert rec.duration is None
 
 
 class TestCopy:
     def test_copy(self):
-        src = Recording(
+        src = TimelineRecording(
             ["ls"],
-            stdin="in",
-            stdout="out",
-            stderr="err",
-            rc=0,
+            returncode=0,
             iteration=5,
-            duration=999,
         )
-        dst = Recording(["placeholder"])
+        src.append_event(event_type=EventType.stdin, data="in", duration=1000)
+        dst = TimelineRecording(["placeholder"])
         dst.copy(src)
         assert dst.args == ["ls"]
-        assert dst.stdin == "in"
-        assert dst.stdout == "out"
-        assert dst.stderr == "err"
-        assert dst.rc == 0
+        assert dst.returncode == 0
         assert dst.iteration == 5
-        assert dst.duration == 999
+        assert dst.remaining_duration() == 1000
 
 
 class TestMatch:
     def test_args_only(self):
-        rec = Recording(["ls", "/tmp"])
+        rec = TimelineRecording(["ls", "/tmp"])
         assert rec.match(["ls", "/tmp"]) is True
 
     def test_args_no_match(self):
-        rec = Recording(["ls", "/tmp"])
+        rec = TimelineRecording(["ls", "/tmp"])
         assert rec.match(["ls", "/var"]) is False
 
-    def test_with_stdin(self):
-        rec = Recording(["cat"], stdin="hello")
-        assert rec.match(["cat"], stdin="hello") is True
-        assert rec.match(["cat"], stdin="other") is False
-        assert rec.match(["cat"]) is False
-
     def test_with_iteration(self):
-        rec = Recording(["ls"], iteration=2)
+        rec = TimelineRecording(["ls"], iteration=2)
         assert rec.match(["ls"], iteration=2) is True
         assert rec.match(["ls"], iteration=1) is False
         assert rec.match(["ls"]) is True  # iteration=None ignores it
@@ -134,15 +107,15 @@ class TestMatch:
 
 class TestEq:
     def test_equal(self):
-        a = Recording(["ls"], stdin=None, iteration=1)
-        b = Recording(["ls"], stdin=None, iteration=1)
+        a = TimelineRecording(["ls"], iteration=1)
+        b = TimelineRecording(["ls"], iteration=1)
         assert a == b
 
     def test_not_equal(self):
-        a = Recording(["ls"], iteration=1)
-        b = Recording(["ls"], iteration=2)
+        a = TimelineRecording(["ls"], iteration=1)
+        b = TimelineRecording(["ls"], iteration=2)
         assert a != b
 
     def test_non_recording(self):
-        rec = Recording(["ls"])
+        rec = TimelineRecording(["ls"])
         assert rec.__eq__("not a recording") is NotImplemented
