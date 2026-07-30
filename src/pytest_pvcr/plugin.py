@@ -113,10 +113,7 @@ def pvcr(
         SubprocessWrapper.pvcr_current_request = request
         SubprocessWrapper.pvcr_do_wait = pvcr_markers[0].kwargs.get("wait", True)
         SubprocessWrapper.pvcr_block_run = pvcr_block_run
-        recordings_file = (
-            Path(request.getfixturevalue("recordings_dir"))
-            / f"{request.function.__name__}.yaml"
-        )
+        recordings_file = Path(request.getfixturevalue("recordings_dir")) / f"{request.function.__name__}.yaml"
 
         fuzzy_matchers = list(pvcr_global_fuzzy_matchers)
         for marker in pvcr_fuzzy_matchers:
@@ -130,9 +127,7 @@ def pvcr(
             module = request.node.path
             fuzzy_matchers.insert(0, str(module.parent.parent))
 
-        SubprocessWrapper.pvcr_history = Recordings(
-            recordings_file, pvcr_record_mode, fuzzy_matchers
-        )
+        SubprocessWrapper.pvcr_history = Recordings(recordings_file, pvcr_record_mode, fuzzy_matchers)
         yield SubprocessWrapper.pvcr_history
 
         # teardown
