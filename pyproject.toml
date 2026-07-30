@@ -12,6 +12,7 @@ requires-python = ">=3.12"
 dependencies = [
     "pytest>=3.5.0",
     "pyyaml>=6.0.3",
+    "requests[socks]>=2.34.2",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -64,6 +65,5 @@ skips = ["B404"]
 [dependency-groups]
 dev = [
     "bandit>=1.8.0",
-    "pip-audit>=2.7.0",
     "pytest-cov>=7.0.0",
 ]
