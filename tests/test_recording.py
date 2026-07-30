@@ -18,7 +18,18 @@ class TestTimelineRecording:
         assert rec.returncode == 0
         assert rec.iteration == 2
 
-    def test_duration(self):
+    def test_remaining_duration(self):
+        rec = TimelineRecording(
+            ["echo"],
+            returncode=0,
+        )
+        rec.append_event(event_type=EventType.stdin, data="in", duration=1000)
+        rec.append_event(event_type=EventType.stdout, data="out", duration=2000)
+        rec.next_event(EventType.stdin)
+
+        assert rec.remaining_duration() == 2000
+
+    def test_total_duration(self):
         rec = TimelineRecording(
             ["echo"],
             returncode=0,
@@ -26,7 +37,7 @@ class TestTimelineRecording:
         rec.append_event(event_type=EventType.stdin, data="in", duration=1000)
         rec.append_event(event_type=EventType.stdout, data="out", duration=2000)
 
-        assert rec.remaining_duration() == 3000
+        assert rec.total_duration() == 3000
 
 
 class TestToEncodedDict:

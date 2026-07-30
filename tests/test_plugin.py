@@ -28,6 +28,125 @@ def test_pvcr_records_and_replays_popen(pytester):
     result.assert_outcomes(passed=1)
 
 
+def test_pvcr_records_and_replays_wait(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            ret = subprocess.Popen(["echo", "hello\\nworld !"], stdout=subprocess.PIPE)
+            line1 = ret.stdout.readline()
+            line2 = ret.stdout.readline()
+            ret.wait()
+
+            assert line1 == b"hello\\n"
+            assert line2 == b"world !\\n"
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
+def test_pvcr_records_and_replays_poll(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import time
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            ret = subprocess.Popen(["sleep", "1"], stdout=subprocess.PIPE)
+            assert ret.poll() is None
+            time.sleep(2)
+            assert ret.poll() == 0
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
+def test_pvcr_records_and_replays_send_signal(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            ret = subprocess.Popen(["sleep", "2"], stdout=subprocess.PIPE)
+            ret.send_signal(15)
+            ret.communicate()
+            assert ret.returncode == -15
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
+def test_pvcr_records_and_replays_terminate(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            ret = subprocess.Popen(["sleep", "2"], stdout=subprocess.PIPE)
+            ret.terminate()
+            ret.communicate()
+            assert ret.returncode is None
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
+def test_pvcr_records_and_replays_kill(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            ret = subprocess.Popen(["sleep", "2"], stdout=subprocess.PIPE)
+            ret.kill()
+            ret.communicate()
+            assert ret.returncode is None
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
 def test_pvcr_records_and_replays_run(pytester):
     pytester.makepyfile(
         textwrap.dedent("""\
@@ -39,6 +158,27 @@ def test_pvcr_records_and_replays_run(pytester):
             ret = subprocess.run(["echo", "hello"], capture_output=True)
             assert ret.returncode == 0
             assert b"hello" in ret.stdout
+        """)
+    )
+    # First run: record
+    result = pytester.runpytest("--pvcr-record-mode=new", "-v")
+    result.assert_outcomes(passed=1)
+
+    # Second run: replay (none mode, no real execution)
+    result = pytester.runpytest("--pvcr-record-mode=none", "-v")
+    result.assert_outcomes(passed=1)
+
+
+def test_pvcr_records_and_replays_run_with_check(pytester):
+    pytester.makepyfile(
+        textwrap.dedent("""\
+        import subprocess
+        import pytest
+
+        @pytest.mark.pvcr()
+        def test_echo():
+            with pytest.raises(subprocess.CalledProcessError):
+                ret = subprocess.run(["sh", "-c", "exit 1"], check=True)
         """)
     )
     # First run: record
